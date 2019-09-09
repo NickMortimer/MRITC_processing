@@ -3,7 +3,7 @@ import shutil
 import os
 
 #'SelNo-NS replaced'
-surveypath = '/OSM/HBA/OA_BENTHICVIDEO/archive/surveys/IN2018_V06/MRITC/'
+surveypath = '/datasets/work/OA_BENTHICVIDEO_WORK/surveys/IN2018_V06/MRITC/'
 imagepath = surveypath + 'IN2018_V06_%03d/stills/%s'
 samplepath = '/datasets/work/OA_SEAMOUNTS_SOURCE/IN2018_V06/IMP/IN2018_V06_%03d/RANDSPL/%s'
 images =pd.read_csv(surveypath+'data/output/MRITC_TAG_IN2018_V06.csv',index_col=['recorded_time'],parse_dates=['recorded_time'])
@@ -17,13 +17,13 @@ def task_fill_quads():
             3) + '_' + data.NewFileName
         data =data.drop_duplicates(subset='SampleName')
         data['Operation'] =pd.to_numeric(data.NewFileName.str.split('_',expand=True)[4])
-        data['Copied'] = False
+        data.loc[data.Copied.isna(),'Copied'] = False
         #let's copy the images...
         for ind,row in data.iterrows():
             print(ind)
             source = imagepath % (row.Operation,row.NewFileName)
             destination = samplepath % (row.Operation,row.SampleName)
-            if not os.path.exists(destination):
+            if (not os.path.exists(destination)) & (not row['Copied']):
                 print('cp %s --> %s' % (source, destination))
                 shutil.copy(source,destination)
                 data.at[ind,'Copied']=True
@@ -40,6 +40,7 @@ def task_fill_quads():
         'targets': [output],
         'file_dep': [input],
         'uptodate': [True, ],
+        'watch': ['/datasets/work/OA_SEAMOUNTS_SOURCE/IN2018_V06/IMP/'],
         'clean': True,
     }
 
